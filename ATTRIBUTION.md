@@ -1,13 +1,16 @@
-# Attribution — intentLM™ Global Intent Taxonomy
+# Crediting the intentLM™ Global Intent Taxonomy
 
-When you redistribute the taxonomy, ship a derived taxonomy, document token
-IDs in a public project or paper, or use the vocabulary as a **context
-compressor / LLM feature space**, include credit.
+The token vocabulary in this package (integer IDs and labels in `src/taxonomy.ts`)
+is licensed under **CC BY-SA 4.0**. See [`LICENSE-TAXONOMY`](./LICENSE-TAXONOMY).
 
-License: **CC BY-SA 4.0** (see `LICENSE-TAXONOMY`).  
-SDK runtime code (outside the taxonomy): **Apache-2.0** (see `LICENSE`).
+Everything else in this repository (the browser SDK and helpers) is licensed under
+**Apache License 2.0**. See [`LICENSE`](./LICENSE).
 
-## Short form
+If you redistribute the taxonomy, publish a derived vocabulary, document the
+token IDs in a project or paper, or use the IDs in prompts / training data,
+please include attribution.
+
+## Suggested credit (short)
 
 ```
 Token vocabulary from the intentLM™ Global Intent Taxonomy
@@ -15,7 +18,7 @@ Token vocabulary from the intentLM™ Global Intent Taxonomy
 Licensed under CC BY-SA 4.0.
 ```
 
-## Longer form
+## Suggested credit (full)
 
 ```
 This project uses the intentLM™ Global Intent Taxonomy (stable integer
@@ -25,28 +28,26 @@ token IDs and labels). Source: https://intentlm.ai/brand —
 Token IDs must not be reassigned.
 ```
 
-## LLM / context-compressor use
+## Using tokens with LLMs or embeddings
 
-If you map text, URLs, or events into intentLM token IDs for prompts,
-embeddings, RAG, or training data:
+When you map events or text into these token IDs for prompts, embeddings,
+retrieval, or datasets:
 
-1. Keep token ID meanings unchanged (`102` = `PRICING_VIEW`, etc.).
-2. Put the short-form credit in your model card, dataset README, or
-   system-prompt appendix.
-3. If you publish an adapted token vocabulary (renamed labels, removed
-   IDs, incompatible namespaces), that adaptation is a taxonomy
-   derivative → **CC BY-SA 4.0** ShareAlike applies.
+1. Keep published meanings stable (for example, `102` remains `PRICING_VIEW`).
+2. Include the short credit above in your README, model card, or dataset docs.
+3. If you publish a modified vocabulary (renamed labels, removed IDs, or
+   incompatible namespaces), that work is a taxonomy derivative and must also
+   be shared under **CC BY-SA 4.0**.
 
-Using the Apache-licensed SDK to *emit* tokens does not re-license the
-taxonomy itself as Apache-2.0.
+Using the Apache-2.0 SDK to generate tokens does not change the taxonomy’s
+CC BY-SA 4.0 license.
 
-## ShareAlike reminder
+## Adding new tokens
 
-If you adapt the taxonomy (change labels or structure beyond additive
-new IDs in unused ranges under the published conventions), distribute
-your taxonomy derivatives under CC BY-SA 4.0 as well.
+New token IDs should be additive (new IDs in unused ranges). Do not reuse an
+existing ID for a different meaning.
 
 ## Trademark
 
-Credit ≠ permission to brand your product as intentLM. See
-https://intentlm.ai/brand
+Attribution satisfies the taxonomy license; it does not grant permission to
+brand your product as intentLM. See [intentlm.ai/brand](https://intentlm.ai/brand).

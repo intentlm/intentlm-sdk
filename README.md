@@ -1,14 +1,18 @@
 # intentlm-sdk
 
-Browser SDK and **Global Intent Taxonomy** for [intentLM™](https://intentlm.ai) — real-time behavioral intent classification.
+Open-source browser SDK and **Global Intent Taxonomy** for [intentLM™](https://intentlm.ai).
 
-- **Tokenization is local.** URL/DOM patterns map to stable integer token IDs in the browser. Raw URLs and PII are not sent as part of the token stream.
-- **Taxonomy is shared.** Token `102` always means `PRICING_VIEW` across installations — that shared vocabulary is the open standard.
-- **Hosted classification is optional.** Live intent labels come from the intentLM inference API when you configure an API key and endpoint.
+Use it to turn in-app navigation and UI events into stable integer token IDs, then optionally send those tokens to the intentLM API for real-time intent classification.
 
-npm: [`intentlm-sdk`](https://www.npmjs.com/package/intentlm-sdk)
+## What this package does
 
-> **This repository is the open SDK + taxonomy only.** Product issues for the hosted platform (dashboard, billing, inference quality, webhooks) belong on [intentlm.ai](https://intentlm.ai) / support — not in this repo’s issue tracker unless they are clearly SDK bugs.
+- Maps URLs and in-app views to a shared token vocabulary (for example, token `102` always means `PRICING_VIEW`)
+- Keeps raw URLs and page text in the browser — only token IDs (and related non-PII metadata you configure) are eligible to leave the client
+- Works with the hosted intentLM product when you supply an API key, or as a taxonomy / tokenization library in your own stack
+
+**npm:** [`intentlm-sdk`](https://www.npmjs.com/package/intentlm-sdk)
+
+This repository covers the **SDK and taxonomy**. For the hosted dashboard, billing, or inference support, use [intentlm.ai](https://intentlm.ai). Open issues here for SDK bugs, docs, and taxonomy questions.
 
 ## Install
 
@@ -25,7 +29,8 @@ intentLM.init({
   apiKey: 'ilm_live_...',
   useRemoteConfig: true,
   configBaseUrl: '/api/intentlm',
-  consentCheck: () => true, // wire your CMP before production
+  // Wire your consent / CMP check before production
+  consentCheck: () => true,
   patterns: {
     '/': 101,
     '/pricing*': 102,
@@ -34,50 +39,49 @@ intentLM.init({
 })
 ```
 
-Production apps should proxy `/api/intentlm` to the intentLM Config API (see [intentlm.ai](https://intentlm.ai) dashboard Setup).
+In production, proxy `/api/intentlm` to the intentLM Config API (dashboard → Setup).  
+Onboarding help: `npx -y @intentlm/cli init --push`
 
-## Privacy & network behavior
+## Privacy and network behavior
 
-| Mode | What leaves the browser |
-|------|-------------------------|
-| **Token mapping** | Nothing by itself — patterns → integer IDs run locally |
-| **With `apiKey` (current default product path)** | Integer token sequences (+ timing metadata, opaque ids you set) to intentLM `/v1/analyze` and `/v1/ingest`. Optional remote config / discovery calls when enabled |
-| **Without configuring a hosted endpoint** | Intended future: local-only compressor / taxonomy use with **no** phone-home. Today `apiKey` is still required by `init()` for the hosted product path |
+| What you do | What leaves the browser |
+|-------------|-------------------------|
+| Map patterns to tokens only | Token IDs are computed locally; nothing is sent until you call into a remote API |
+| Call `init` with an intentLM `apiKey` (typical hosted setup) | Token sequences and timing metadata go to intentLM (`/v1/analyze`, `/v1/ingest`). Remote config may also be fetched when enabled |
+| Use the taxonomy maps without the hosted API | Import `intentlm-sdk/taxonomy` for local vocabulary use — no network by itself |
 
-**Be explicit with users:** if you call `intentLM.init({ apiKey, … })` against intentLM (or a self-hosted compatible API), the SDK will send token sequences to that endpoint. Do not describe the package as “fully offline” while using hosted analyze/ingest.
+If you initialize against intentLM (or any compatible remote endpoint), the SDK will send token sequences there. That is expected for hosted classification — it is not an offline-only mode.
 
-Hosted product + privacy policy: [intentlm.ai](https://intentlm.ai) · [Privacy](https://intentlm.ai/privacy) · [Brand](https://intentlm.ai/brand)
+More detail: [Privacy Policy](https://intentlm.ai/privacy) · [Brand & credit](https://intentlm.ai/brand)
 
-## Licenses (dual)
+## Licenses
 
-| Material | License |
-|----------|---------|
-| SDK code (`src/intentlm.ts`, actions, react helpers, build, tests, …) | **Apache-2.0** — see [`LICENSE`](./LICENSE) |
-| Global Intent Taxonomy (`src/taxonomy.ts`, token IDs & labels) | **CC BY-SA 4.0** — see [`LICENSE-TAXONOMY`](./LICENSE-TAXONOMY) |
+This package is **dual-licensed**:
 
-Credit examples: [`ATTRIBUTION.md`](./ATTRIBUTION.md). Trademark rules: [intentlm.ai/brand](https://intentlm.ai/brand).
+| Part | License |
+|------|---------|
+| SDK code (runtime, actions, React helpers, tests, build) | [Apache License 2.0](./LICENSE) |
+| Global Intent Taxonomy (`src/taxonomy.ts` — token IDs and labels) | [CC BY-SA 4.0](./LICENSE-TAXONOMY) |
 
-`package.json` uses `"license": "SEE LICENSE IN LICENSE"` because this package is dual-licensed.
+How to credit the taxonomy: [`ATTRIBUTION.md`](./ATTRIBUTION.md)
 
-## Subpath exports
+## Package exports
 
-| Import | Use |
-|--------|-----|
+| Import | Purpose |
+|--------|---------|
 | `intentlm-sdk` | Core SDK |
-| `intentlm-sdk/taxonomy` | Taxonomy constants / maps |
+| `intentlm-sdk/taxonomy` | Taxonomy constants and maps |
 | `intentlm-sdk/react` | React view helpers |
 | `intentlm-sdk/actions` | Intent-driven UI actions |
 
-## Docs & product
+## Learn more
 
-- [intentlm.ai](https://intentlm.ai) — hosted intent, dashboard, pricing
+- [intentlm.ai](https://intentlm.ai) — product, dashboard, pricing
 - [Brand & taxonomy credit](https://intentlm.ai/brand)
 - Dashboard → Setup → Install / URL patterns
 
 ## Trademark
 
-intentLM™ is a trademark of Suman Bhattacharya. The open-source SDK and taxonomy are licensed separately (see above). Use of the intentLM name in a product title or confusing branding requires permission. Nominative use (e.g. “compatible with the intentLM taxonomy”) with attribution is OK.
-
-## Maintainers
-
-Private monorepo remains canonical for day-to-day SDK work. This tree is produced by `scripts/sync-sdk-public.sh` — see [`SYNC.md`](./SYNC.md).
+intentLM™ is a trademark of Suman Bhattacharya.  
+Using this software under Apache-2.0 / CC BY-SA 4.0 does **not** grant rights to use the intentLM name in your product title or branding.  
+Nominative references (for example, “compatible with the intentLM taxonomy”) with attribution are fine. Details: [intentlm.ai/brand](https://intentlm.ai/brand).
