@@ -27,7 +27,7 @@ Create an account at [intentlm.ai](https://intentlm.ai/signup) and get:
 - Web app instrumentation, dashboard Insights, and webhooks  
 - No credit card required to start  
 
-[Try the sandbox](https://intentlm.ai/sandbox/b2b) · [Sign up free](https://intentlm.ai/signup) · [Pricing](https://intentlm.ai/#pricing)
+[Try the sandbox](https://intentlm.ai/sandbox/b2b) · [Sign up free](https://intentlm.ai/signup) · [Compare plans](https://intentlm.ai)
 
 ---
 
