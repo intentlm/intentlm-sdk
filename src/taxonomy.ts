@@ -1,10 +1,9 @@
 /**
- * Licensed under CC BY-SA 4.0 — see LICENSE-TAXONOMY and ATTRIBUTION.md in the repo root.
- * SDK code outside this file is Apache-2.0 — see LICENSE.
- */
-
-/**
  * intentLM Global Intent Taxonomy
+ *
+ * Licensed under CC BY-SA 4.0 — see LICENSE-TAXONOMY and ATTRIBUTION.md
+ * (public package: https://github.com/intentlm/intentlm-sdk).
+ * SDK code outside this file is Apache-2.0 — see LICENSE.
  *
  * Token IDs are STABLE and shared across ALL customers.
  * Token 102 always means PRICING_VIEW regardless of which customer's app fires it.

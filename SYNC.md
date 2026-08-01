@@ -44,19 +44,22 @@ gh auth login
 **Option A — create empty repo, then push a clean tree** (recommended; keeps monorepo git history private):
 
 ```bash
-# from monorepo root
+# IMPORTANT: run every command from the monorepo root
+#   /Users/.../intentLM   (the private repo that contains sdk-public/)
+# Not from inside a clone of intentlm-sdk.
+
+cd /path/to/intentLM          # ← monorepo root
 ./scripts/sync-sdk-public.sh
 
 gh repo create intentlm/intentlm-sdk --public \
   --description "Browser SDK + global intent taxonomy for intentLM"
 
-# push staging tree without nesting .git inside the monorepo
 # Use SSH (not HTTPS) — GitHub rejects password auth on HTTPS remotes.
 TMP=$(mktemp -d)
 git clone git@github.com:intentlm/intentlm-sdk.git "$TMP/intentlm-sdk"
 rsync -a --delete \
   --exclude node_modules/ --exclude dist/ --exclude .git/ \
-  sdk-public/ "$TMP/intentlm-sdk/"
+  "$PWD/sdk-public/" "$TMP/intentlm-sdk/"
 cd "$TMP/intentlm-sdk"
 git add -A
 git commit -m "Initial public SDK + taxonomy release tree"

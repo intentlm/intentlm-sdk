@@ -1,8 +1,12 @@
 /**
  * intentLM Browser SDK
  *
+ * Copyright (c) 2024–2026 Suman Bhattacharya
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Raw events (URLs, DOM text, user input) NEVER leave the browser.
  * Only global taxonomy token IDs are forwarded to intentLM servers.
+ * (Taxonomy content in taxonomy.ts is CC BY-SA 4.0 — see LICENSE-TAXONOMY.)
  *
  * Usage (npm):
  *   import { intentLM } from 'intentlm-sdk';
