@@ -1,0 +1,87 @@
+{
+  "name": "intentlm-sdk",
+  "version": "0.1.9",
+  "description": "intentLM\u2122 browser SDK \u2014 real-time behavioral intent classification",
+  "author": "intentLM",
+  "license": "SEE LICENSE IN LICENSE",
+  "main": "./dist/intentlm.cjs.js",
+  "module": "./dist/intentlm.esm.js",
+  "types": "./dist/intentlm.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/intentlm.esm.js",
+      "require": "./dist/intentlm.cjs.js",
+      "types": "./dist/intentlm.d.ts"
+    },
+    "./taxonomy": {
+      "import": "./dist/taxonomy.esm.js",
+      "require": "./dist/taxonomy.cjs.js",
+      "types": "./dist/taxonomy.d.ts"
+    },
+    "./react": {
+      "import": "./dist/react-views.esm.js",
+      "require": "./dist/react-views.cjs.js",
+      "types": "./dist/react-views.d.ts"
+    },
+    "./actions": {
+      "import": "./dist/intentlm-actions.esm.js",
+      "require": "./dist/intentlm-actions.cjs.js",
+      "types": "./dist/intentlm-actions.d.ts"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/intentlm/intentlm-sdk.git"
+  },
+  "homepage": "https://intentlm.ai",
+  "bugs": "https://github.com/intentlm/intentlm-sdk/issues",
+  "keywords": [
+    "intentlm",
+    "sdk",
+    "intent",
+    "analytics",
+    "behavioral-intent",
+    "saas"
+  ],
+  "peerDependencies": {
+    "react": ">=17.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "LICENSE-TAXONOMY",
+    "NOTICE",
+    "ATTRIBUTION.md"
+  ],
+  "scripts": {
+    "build": "node build.mjs && tsc --emitDeclarationOnly",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "jest --passWithNoTests",
+    "dev": "tsc --watch"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "esbuild": "^0.21.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^30.4.1",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.4.0"
+  }
+}

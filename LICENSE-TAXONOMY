@@ -1,0 +1,41 @@
+intentLM™ Global Intent Taxonomy
+=================================
+
+Copyright (c) 2024–2026 Suman Bhattacharya
+
+The Global Intent Taxonomy — including stable integer token IDs, token labels,
+namespace documentation, and the contents of `src/taxonomy.ts` (and any
+machine-readable exports derived from it) — is licensed under the
+Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0).
+
+You are free to:
+
+  Share — copy and redistribute the taxonomy in any medium or format
+  Adapt — remix, transform, and build upon the taxonomy for any purpose,
+          even commercially
+
+Under the following terms:
+
+  Attribution — You must give appropriate credit, provide a link to the
+                license, and indicate if changes were made. See
+                ATTRIBUTION.md and https://intentlm.ai/brand
+
+  ShareAlike — If you remix, transform, or build upon the taxonomy, you
+               must distribute your contributions under the same license
+               as the original (CC BY-SA 4.0)
+
+  No additional restrictions — You may not apply legal terms or
+                               technological measures that legally restrict
+                               others from doing anything the license permits
+
+Token IDs are immutable: do not reassign an existing ID to a different meaning.
+
+Full legal code:
+  https://creativecommons.org/licenses/by-sa/4.0/legalcode
+
+Human-readable summary:
+  https://creativecommons.org/licenses/by-sa/4.0/
+
+IMPORTANT: This CC BY-SA 4.0 license applies ONLY to the taxonomy materials
+named above. All other source code in this repository (the browser SDK and
+related packages) is licensed under the Apache License 2.0 — see LICENSE.

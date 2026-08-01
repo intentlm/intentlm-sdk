@@ -1,0 +1,14 @@
+intentLM™
+Copyright (c) 2024–2026 Suman Bhattacharya
+
+This product includes software developed for intentLM
+(https://intentlm.ai).
+
+SDK source code (excluding the Global Intent Taxonomy) is licensed under
+the Apache License, Version 2.0. See LICENSE.
+
+The Global Intent Taxonomy (src/taxonomy.ts and token ID/label mappings)
+is licensed under CC BY-SA 4.0. See LICENSE-TAXONOMY and ATTRIBUTION.md.
+
+intentLM™ is a trademark of Suman Bhattacharya.
+Brand guide: https://intentlm.ai/brand
