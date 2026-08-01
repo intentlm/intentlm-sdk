@@ -2,7 +2,7 @@
 
 Open-source browser SDK and **Global Intent Taxonomy** for [intentLM™](https://intentlm.ai).
 
-Turn in-app navigation into a privacy-safe token stream, then get a **live intent label** your agents, webhooks, and product can act on — before the user asks for help.
+Turn in-app navigation into a privacy-safe shared token vocabulary — then optionally plug into managed intent classification for agents, webhooks, and product nudges.
 
 **npm:** [`intentlm-sdk`](https://www.npmjs.com/package/intentlm-sdk)
 
@@ -12,28 +12,100 @@ Turn in-app navigation into a privacy-safe token stream, then get a **live inten
 
 | Without intentLM | With intentLM |
 |------------------|---------------|
-| Agents and CS tools see pages or chat text after the fact | Intent is classified **while the user browses** |
+| Agents and CS tools see pages or chat text after the fact | Intent can be classified **while the user browses** |
 | Every app invents its own event names | Shared vocabulary: token `102` always means `PRICING_VIEW` |
-| Raw URLs / DOM leave the browser | Only integer token IDs are sent for classification |
+| Raw URLs / DOM leave the browser for “intent” features | Only integer token IDs need leave the client for classification |
 
-**Open SDK** = capture + taxonomy in your app.  
-**Managed service** = real-time classification, dashboard, webhooks, and agent context — [intentlm.ai](https://intentlm.ai).
+**Open SDK** = taxonomy + capture building blocks (Apache-2.0 / CC BY-SA).  
+**Managed service** = live inference, Insights, webhooks, agent context — [intentlm.ai](https://intentlm.ai).
+
+### Cost vs rolling your own LLM intent pipeline
+
+See modeled savings on the compare-cost page:
+
+**[intentlm.ai/compare-cost](https://intentlm.ai/compare-cost)** — intentLM token classification vs in-house LLM / analytics approaches.
 
 ### Free managed tier
 
-Create an account at [intentlm.ai](https://intentlm.ai/signup) and get:
+Want labels + confidence without running models yourself?
 
-- **10,000 Monthly Active Sessions (MAS) free** every month  
-- Web app instrumentation, dashboard Insights, and webhooks  
-- No credit card required to start  
-
-[Try the sandbox](https://intentlm.ai/sandbox/b2b) · [Sign up free](https://intentlm.ai/signup) · [Compare plans](https://intentlm.ai)
+- **[Sign up free](https://intentlm.ai/signup)** — **10,000 Monthly Active Sessions (MAS) / month** at $0  
+- Web app, dashboard Insights, webhooks — no credit card to start  
+- [Live sandbox](https://intentlm.ai/sandbox/b2b)
 
 ---
 
-## What you get (example output)
+## Two ways to use this package
 
-After the user hits pricing (and enough of a sequence exists), the managed API returns a classification like:
+| Path | API key? | What you get |
+|------|----------|--------------|
+| **A. Open source — taxonomy** | **No** | Stable token IDs & labels for your own compressor, analytics, or models |
+| **B. Managed classification** | **Yes** (`ilm_live_…`) | Real-time `intent` + `confidence` via intentLM inference |
+
+Today, `intentLM.init({…})` is built for path **B** and **requires an API key**. Path **A** does not call `init` — import the taxonomy (and map events yourself).
+
+---
+
+## A. Open source — no API key
+
+Install:
+
+```bash
+npm install intentlm-sdk
+```
+
+Use the Global Intent Taxonomy locally:
+
+```typescript
+import { INTENT_TAXONOMY, TOKEN_BY_LABEL } from 'intentlm-sdk/taxonomy'
+
+// Shared meaning across products — do not reassign IDs
+const pricingToken = TOKEN_BY_LABEL.PRICING_VIEW // 102
+
+// Example: map your own routes → tokens (no network)
+function pathToToken(pathname: string): number | undefined {
+  if (pathname.startsWith('/pricing')) return 102
+  if (pathname === '/') return 101
+  return undefined
+}
+```
+
+Credit the taxonomy when you redistribute it: [`ATTRIBUTION.md`](./ATTRIBUTION.md) · [intentlm.ai/brand](https://intentlm.ai/brand).
+
+When you want **hosted intent labels** instead of building your own classifier, continue with path B.
+
+---
+
+## B. Managed classification — use intentlm.ai
+
+Full install, URL patterns, consent, and proxy steps live in the product (kept up to date with the dashboard):
+
+1. **[Create a free account](https://intentlm.ai/signup)** (10K MAS/mo)  
+2. Follow **Dashboard → Setup** on [intentlm.ai](https://intentlm.ai) — API key, patterns, proxy, consent  
+3. Optional CLI (uses your key): `npx -y @intentlm/cli login` then `npx -y @intentlm/cli init --push`  
+
+Minimal shape once you have a key from Setup:
+
+```typescript
+import { intentLM } from 'intentlm-sdk'
+
+intentLM.init({
+  apiKey: 'ilm_live_...', // from Dashboard → Setup
+  useRemoteConfig: true,
+  configBaseUrl: '/api/intentlm',
+  consentCheck: () => true, // wire your CMP before production
+  patterns: {
+    '/': 101,
+    '/pricing*': 102,
+    '/checkout/**': 203,
+  },
+  onAnalyze: (result) => {
+    console.log(result.intent, result.confidence, result.trigger_nudge)
+  },
+})
+```
+
+### Example managed output
 
 ```json
 {
@@ -45,110 +117,21 @@ After the user hits pricing (and enough of a sequence exists), the managed API r
 }
 ```
 
-Your app can:
+Confirm in **Insights** on [intentlm.ai](https://intentlm.ai), or via webhooks / agent docs: [intentlm.ai/docs](https://intentlm.ai/docs).
 
-- Push that object into an **AI agent** system prompt  
-- Fire a **webhook** to Slack / CRM / lifecycle tools  
-- Show an in-product nudge via `intentlm-sdk/actions`  
-
-Raw page HTML and URLs stay in the browser; the API sees token IDs such as `[101, 102, 203, …]`.
-
----
-
-## Make it work — step by step
-
-### 1. Create a free intentLM account
-
-1. Go to [intentlm.ai/signup](https://intentlm.ai/signup)  
-2. Open **Dashboard → Setup** and copy your API key (`ilm_live_…`)  
-3. (Optional) Complete the install wizard or run the CLI below  
-
-### 2. Install the SDK
-
-```bash
-npm install intentlm-sdk
-```
-
-### 3. Initialize in your web app
-
-```typescript
-import { intentLM } from 'intentlm-sdk'
-
-intentLM.init({
-  apiKey: 'ilm_live_...',           // from intentlm.ai dashboard
-  useRemoteConfig: true,
-  configBaseUrl: '/api/intentlm',   // proxy to Config API in production
-  consentCheck: () => true,         // replace with your CMP before production
-  patterns: {
-    '/': 101,           // HOME
-    '/pricing*': 102,   // PRICING_VIEW
-    '/checkout/**': 203,
-  },
-})
-```
-
-**Faster path:** from your app repo:
-
-```bash
-npx -y @intentlm/cli login
-npx -y @intentlm/cli init --push
-```
-
-That scans routes, suggests token mappings, and can push patterns to your account.
-
-### 4. Proxy config in production
-
-Browser calls should not hit the Config API with CORS-only hacks. Proxy `/api/intentlm` to the intentLM Config API (dashboard **Setup** shows the exact pattern for Next.js / Vite / etc.).
-
-### 5. Confirm it works
-
-1. Browse your app: home → pricing → a plan page  
-2. Open [intentlm.ai](https://intentlm.ai) → **Insights** — sessions and intents should appear  
-3. Or listen in the page:
-
-```typescript
-intentLM.init({
-  apiKey: 'ilm_live_...',
-  patterns: { '/pricing*': 102 },
-  onAnalyze: (result) => {
-    console.log(result.intent, result.confidence, result.trigger_nudge)
-  },
-})
-```
-
-### 6. Act on intent (optional)
-
-- **Agents / MCP:** wire classifications into your agent — see [docs on intentlm.ai](https://intentlm.ai/docs)  
-- **Webhooks:** Dashboard → Webhooks → your HTTPS endpoint  
-- **In-product UI:** `import { initIntentLMActions } from 'intentlm-sdk/actions'`  
-
----
-
-## Taxonomy only (no hosted API)
-
-You can use the shared vocabulary without classification:
-
-```typescript
-import { INTENT_TAXONOMY, TOKEN_BY_LABEL } from 'intentlm-sdk/taxonomy'
-
-console.log(TOKEN_BY_LABEL.PRICING_VIEW) // 102
-```
-
-To get **intent labels + confidence in real time**, use the managed inference API with an API key from [intentlm.ai](https://intentlm.ai/signup) (includes **10K free sessions / month**).
+**Cost angle:** [compare intentLM vs DIY LLM intent](https://intentlm.ai/compare-cost).
 
 ---
 
 ## Privacy and network behavior
 
-| What you do | What leaves the browser |
-|-------------|-------------------------|
-| Map patterns → tokens only | Nothing remote until you call a hosted API |
-| `init` with an intentLM `apiKey` | Token sequences + timing metadata to `/v1/analyze` and `/v1/ingest` |
-| Import `intentlm-sdk/taxonomy` only | No network |
+| What you do | Network |
+|-------------|---------|
+| Import `intentlm-sdk/taxonomy` only | None |
+| Your own code mapping paths → token IDs | None (unless you send tokens somewhere) |
+| `intentLM.init({ apiKey })` against intentLM | Token sequences to `/v1/analyze` and `/v1/ingest` |
 
-Hosted classification is opt-in via API key — not “fully offline” while analyze/ingest are enabled.
-
-[Privacy Policy](https://intentlm.ai/privacy) · [Brand & credit](https://intentlm.ai/brand)
+[Privacy Policy](https://intentlm.ai/privacy)
 
 ---
 
@@ -156,10 +139,10 @@ Hosted classification is opt-in via API key — not “fully offline” while an
 
 | Import | Purpose |
 |--------|---------|
-| `intentlm-sdk` | Core SDK (capture + analyze/ingest) |
-| `intentlm-sdk/taxonomy` | Token ID ↔ label maps |
+| `intentlm-sdk/taxonomy` | Token ID ↔ label maps (**no API key**) |
+| `intentlm-sdk` | Capture + hosted analyze/ingest (**API key required** for `init`) |
 | `intentlm-sdk/react` | React view helpers |
-| `intentlm-sdk/actions` | Intent-driven UI actions |
+| `intentlm-sdk/actions` | Intent-driven UI (typically with managed classifications) |
 
 ---
 
@@ -170,7 +153,7 @@ Hosted classification is opt-in via API key — not “fully offline” while an
 | SDK code | [Apache License 2.0](./LICENSE) |
 | Global Intent Taxonomy (`src/taxonomy.ts`) | [CC BY-SA 4.0](./LICENSE-TAXONOMY) |
 
-Credit guide: [`ATTRIBUTION.md`](./ATTRIBUTION.md)
+[`ATTRIBUTION.md`](./ATTRIBUTION.md)
 
 ---
 
@@ -178,13 +161,14 @@ Credit guide: [`ATTRIBUTION.md`](./ATTRIBUTION.md)
 
 | | |
 |--|--|
-| Product & signup | [intentlm.ai](https://intentlm.ai) |
-| Free account (10K MAS/mo) | [intentlm.ai/signup](https://intentlm.ai/signup) |
-| Live sandbox | [intentlm.ai/sandbox/b2b](https://intentlm.ai/sandbox/b2b) |
+| Product & signup (10K MAS free) | [intentlm.ai/signup](https://intentlm.ai/signup) |
+| Setup (managed install steps) | [intentlm.ai](https://intentlm.ai) → Dashboard → Setup |
+| Cost savings vs DIY | [intentlm.ai/compare-cost](https://intentlm.ai/compare-cost) |
+| Sandbox | [intentlm.ai/sandbox/b2b](https://intentlm.ai/sandbox/b2b) |
 | Docs | [intentlm.ai/docs](https://intentlm.ai/docs) |
 | Brand / taxonomy credit | [intentlm.ai/brand](https://intentlm.ai/brand) |
 
-Issues in **this** repo: SDK bugs, docs, and taxonomy questions. Hosted product / billing / inference quality → [intentlm.ai](https://intentlm.ai) support.
+SDK / taxonomy issues → this repo. Hosted product & billing → [intentlm.ai](https://intentlm.ai).
 
 ---
 
@@ -192,4 +176,4 @@ Issues in **this** repo: SDK bugs, docs, and taxonomy questions. Hosted product 
 
 intentLM™ is a trademark of Suman Bhattacharya.  
 Apache-2.0 / CC BY-SA 4.0 do **not** grant rights to use the intentLM name in your product title or branding.  
-Nominative use (e.g. “compatible with the intentLM taxonomy”) with attribution is fine — [intentlm.ai/brand](https://intentlm.ai/brand).
+Nominative use with attribution is fine — [intentlm.ai/brand](https://intentlm.ai/brand).
