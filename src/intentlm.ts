@@ -64,8 +64,18 @@ export {
 
 /** Configuration passed to intentLM.init() */
 export interface IntentLMConfig {
-  /** intentLM API key (ilm_live_... format) */
-  apiKey: string;
+  /**
+   * intentLM API key (`ilm_live_…`). Required unless {@link localOnly} is true.
+   */
+  apiKey?: string;
+
+  /**
+   * Capture tokens and visitor_id in the browser with **no network calls**.
+   * Use for open-source / taxonomy experimentation. Requires {@link patterns};
+   * do not set {@link useRemoteConfig}. Managed classification needs an API key
+   * and `localOnly: false` (default).
+   */
+  localOnly?: boolean;
 
   /**
    * URL glob pattern → global token ID mappings.
@@ -155,7 +165,8 @@ export interface IntentLMConfig {
 
   /**
    * Called after each /v1/analyze round-trip (success or failure).
-   * Useful for dashboards and the sandbox intent panel.
+   * In {@link localOnly} mode, called when the local token sequence updates
+   * (intent/confidence stay null — no hosted classification).
    */
   onAnalyze?: (update: IntentAnalyzeUpdate) => void;
 
@@ -257,6 +268,7 @@ interface CompiledView {
 
 interface ResolvedConfig {
   apiKey: string;
+  localOnly: boolean;
   endpoint: string;
   patterns: CompiledPattern[];
   views: Map<string, CompiledView>;
@@ -346,13 +358,21 @@ class IntentLMSDK {
    * With useRemoteConfig, listeners attach after Config API responds (async).
    */
   init(config: IntentLMConfig): void {
-    if (!config.apiKey) {
-      throw new Error('[intentLM] config.apiKey is required');
+    const localOnly = config.localOnly === true;
+    if (!localOnly && !config.apiKey) {
+      throw new Error(
+        '[intentLM] config.apiKey is required (or set localOnly: true for offline capture)',
+      );
+    }
+    if (localOnly && config.useRemoteConfig) {
+      console.warn(
+        '[intentLM] localOnly ignores useRemoteConfig — using local patterns only',
+      );
     }
 
-    if (config.useRemoteConfig) {
+    if (config.useRemoteConfig && !localOnly) {
       const base = config.configBaseUrl ?? '/api/intentlm';
-      void fetchRemoteInstrumentation(config.apiKey, base).then((remote) => {
+      void fetchRemoteInstrumentation(config.apiKey!, base).then((remote) => {
         if (!remote) {
           console.warn(
             `[intentLM] Could not load instrumentation from ${base}/sdk/instrumentation. ` +
@@ -407,7 +427,8 @@ class IntentLMSDK {
           : this._cfg.visitorPersistenceConsentCheck);
       const next: ResolvedConfig = {
         ...this._cfg,
-        apiKey:       config.apiKey,
+        apiKey:       config.apiKey ?? this._cfg.apiKey,
+        localOnly:    config.localOnly ?? this._cfg.localOnly,
         endpoint:     (config.endpoint ?? this._cfg.endpoint).replace(/\/$/, ''),
         patterns:     this._compilePatterns(config.patterns, localTokenLabels),
         views:        this._compileViews(config.views ?? {}, localTokenLabels),
@@ -444,10 +465,14 @@ class IntentLMSDK {
       return;
     }
 
+    const localOnly = config.localOnly === true;
     const baseConsent = config.consentCheck ?? (() => true);
     const resolved: ResolvedConfig = {
-      apiKey:       config.apiKey,
-      endpoint:     (config.endpoint ?? 'https://intentlm-dev-inference-krxe5fa7dq-uw.a.run.app/v1').replace(/\/$/, ''),
+      apiKey:       config.apiKey ?? '',
+      localOnly,
+      endpoint:     localOnly
+        ? ''
+        : (config.endpoint ?? 'https://intentlm-dev-inference-krxe5fa7dq-uw.a.run.app/v1').replace(/\/$/, ''),
       patterns:     this._compilePatterns(config.patterns, localTokenLabels),
       views:        this._compileViews(config.views ?? {}, localTokenLabels),
       coreActionToken: this._resolveCoreActionToken(config.coreActionToken),
@@ -470,7 +495,8 @@ class IntentLMSDK {
     this._cfg = resolved;
 
     logSdkDebug(this._cfg.debug, 'initialized', {
-      endpoint: this._cfg.endpoint,
+      localOnly: this._cfg.localOnly,
+      endpoint: this._cfg.endpoint || '(none)',
       trackBehavior: this._cfg.trackBehavior,
       visitorPersistence: this._cfg.enableVisitorPersistence,
     });
@@ -527,6 +553,16 @@ class IntentLMSDK {
     return this._visitorId;
   }
 
+  /** Current session id (`sess_…`), or null before init. */
+  getSessionId(): string | null {
+    return this._sessionId;
+  }
+
+  /** Copy of the in-memory integer token sequence for this session. */
+  getSessionTokens(): number[] {
+    return [...this._sequence];
+  }
+
   /**
    * Clear the in-memory token sequence and start a new session.
    * Preserves visitor_id (_ilm_vid) for cross-session stitching.
@@ -580,6 +616,9 @@ class IntentLMSDK {
     const cfg = this._cfg;
     if (!cfg) {
       logSdkError(true, 'agent-response skipped: call init() before recordAgentResponse()');
+      return;
+    }
+    if (cfg.localOnly || !cfg.apiKey || !cfg.endpoint) {
       return;
     }
     if (!params.intent) return;
@@ -1163,6 +1202,20 @@ class IntentLMSDK {
     this._analyzeInFlight = true;
     this._analyzeInFlightSeq = requestSeq;
 
+    if (cfg.localOnly) {
+      this._analyzeInFlight = false;
+      this._notifyAnalyze({
+        isAnalyzing: false,
+        intent: null,
+        confidence: 0,
+        model_tier: null,
+        trigger_nudge: false,
+        suppressed: false,
+      });
+      this._maybeRunFollowUpAnalyze(requestSeq);
+      return;
+    }
+
     const startedAt = performance.now();
     if (!this._analyzeUiPending) {
       this._analyzeUiPending = true;
@@ -1261,6 +1314,12 @@ class IntentLMSDK {
   private _flushTrainingPayload(): void {
     if (this._sequence.length < 2) return;
     const cfg = this._cfg!;
+    if (cfg.localOnly || !cfg.apiKey || !cfg.endpoint) {
+      logSdkDebug(cfg.debug, 'ingest skipped (localOnly or no endpoint)', {
+        tokens: this._sequence.length,
+      });
+      return;
+    }
 
     const payload = {
       ...this._apiPayloadBase(),

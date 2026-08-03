@@ -39,40 +39,85 @@ Want labels + confidence without running models yourself?
 
 | Path | API key? | What you get |
 |------|----------|--------------|
-| **A. Open source — taxonomy** | **No** | Stable token IDs & labels for your own compressor, analytics, or models |
-| **B. Managed classification** | **Yes** (`ilm_live_…`) | Real-time `intent` + `confidence` via intentLM inference |
+| **A. Open source — local capture** | **No** | `visitor_id`, session id, integer token stream in the browser (`localOnly`) |
+| **B. Managed classification** | **Yes** (`ilm_live_…`) | Same capture + live `intent` / `confidence` from intentLM inference |
 
-Today, `intentLM.init({…})` is built for path **B** and **requires an API key**. Path **A** does not call `init` — import the taxonomy (and map events yourself).
+Path **A** never calls the network. Path **B** needs a free key from [intentlm.ai/signup](https://intentlm.ai/signup).
 
 ---
 
 ## A. Open source — no API key
 
-Install:
+Goal: after these steps you can read a stable **`visitor_id`**, a **`sess_…` session id**, and an **integer token sequence** as the user navigates — with **zero** requests to intentLM.
+
+### 1. Install
 
 ```bash
 npm install intentlm-sdk
 ```
 
-Use the Global Intent Taxonomy locally:
+### 2. Init in the browser (no `apiKey`)
+
+Use **`localOnly: true`** (omit `apiKey`). Map your routes to **global** token IDs (do not invent new meanings for existing IDs):
+
+```typescript
+import { intentLM } from 'intentlm-sdk'
+import { TOKEN_BY_LABEL } from 'intentlm-sdk/taxonomy'
+
+intentLM.init({
+  localOnly: true, // required when you omit apiKey — no /v1/analyze or /v1/ingest
+  patterns: {
+    '/': 101, // HOMEPAGE_VIEW
+    '/pricing*': 102, // PRICING_VIEW
+    '/checkout/**': 203,
+  },
+  onAnalyze: (update) => {
+    // Fires after navigation / capture (debounced). intent stays null in localOnly.
+    console.log('visitor_id', update.visitorId)
+    console.log('session_id', update.sessionId)
+    console.log('tokens', update.sessionTokens) // e.g. [910, 101, 102]
+  },
+})
+```
+
+Optional: import taxonomy-only helpers without `init`:
 
 ```typescript
 import { INTENT_TAXONOMY, TOKEN_BY_LABEL } from 'intentlm-sdk/taxonomy'
-
-// Shared meaning across products — do not reassign IDs
 const pricingToken = TOKEN_BY_LABEL.PRICING_VIEW // 102
-
-// Example: map your own routes → tokens (no network)
-function pathToToken(pathname: string): number | undefined {
-  if (pathname.startsWith('/pricing')) return 102
-  if (pathname === '/') return 101
-  return undefined
-}
 ```
 
-Credit the taxonomy when you redistribute it: [`ATTRIBUTION.md`](./ATTRIBUTION.md) · [intentlm.ai/brand](https://intentlm.ai/brand).
+### 3. Navigate (or call `capture`)
 
-When you want **hosted intent labels** instead of building your own classifier, continue with path B.
+In your app, go to a matched route (e.g. `/pricing`), or:
+
+```typescript
+intentLM.capture('PRICING_VIEW') // same as token 102
+```
+
+### 4. Confirm success
+
+In DevTools console (same origin as the page):
+
+```typescript
+intentLM.getVisitorId() // UUID — also cookie `_ilm_vid`
+intentLM.getSessionId() // starts with `sess_`
+intentLM.getSessionTokens() // integers, e.g. [910, 101, 102]
+```
+
+| Check | Passes when |
+|-------|-------------|
+| Visitor | `getVisitorId()` returns a UUID **and** `document.cookie` contains `_ilm_vid=…` |
+| Session | `getSessionId()` is non-null and starts with `sess_` |
+| Tokens | `getSessionTokens()` includes `910` (`SESSION_STARTED`) plus route tokens you mapped (e.g. `102` after `/pricing`) |
+| Network | DevTools → Network: **no** calls to intentLM `/v1/analyze` or `/v1/ingest` |
+| Callback | `onAnalyze` receives `sessionTokens` + `visitorId`; `intent` is `null` |
+
+That is a successful OSS install. You own the stream — send it to your own backend/model if you want.
+
+**Not included without a key:** hosted intent labels (`UPGRADE_SEEKING`, etc.), Insights, webhooks. For those, continue with path B.
+
+Credit the taxonomy when you redistribute it: [`ATTRIBUTION.md`](./ATTRIBUTION.md) · [intentlm.ai/brand](https://intentlm.ai/brand).
 
 ---
 
@@ -128,7 +173,7 @@ Confirm in **Insights** on [intentlm.ai](https://intentlm.ai), or via webhooks /
 | What you do | Network |
 |-------------|---------|
 | Import `intentlm-sdk/taxonomy` only | None |
-| Your own code mapping paths → token IDs | None (unless you send tokens somewhere) |
+| `intentLM.init({ localOnly: true, patterns })` | None — tokens stay in the browser |
 | `intentLM.init({ apiKey })` against intentLM | Token sequences to `/v1/analyze` and `/v1/ingest` |
 
 [Privacy Policy](https://intentlm.ai/privacy)
@@ -140,7 +185,7 @@ Confirm in **Insights** on [intentlm.ai](https://intentlm.ai), or via webhooks /
 | Import | Purpose |
 |--------|---------|
 | `intentlm-sdk/taxonomy` | Token ID ↔ label maps (**no API key**) |
-| `intentlm-sdk` | Capture + hosted analyze/ingest (**API key required** for `init`) |
+| `intentlm-sdk` | Capture; use `localOnly: true` offline, or `apiKey` for hosted analyze/ingest |
 | `intentlm-sdk/react` | React view helpers |
 | `intentlm-sdk/actions` | Intent-driven UI (typically with managed classifications) |
 
