@@ -1,0 +1,12 @@
+{
+  "name": "intentlm-sdk-hello-world",
+  "private": true,
+  "description": "Minimal localOnly demo for intentlm-sdk — visitor_id + token stream, no API key",
+  "scripts": {
+    "start": "npx --yes serve . -l 3456",
+    "test:smoke": "node -e \"require('fs').accessSync('node_modules/intentlm-sdk/dist/intentlm.iife.js'); console.log('ok: intentlm-sdk IIFE present')\""
+  },
+  "dependencies": {
+    "intentlm-sdk": "^0.1.14"
+  }
+}

@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>intentLM SDK — hello world (localOnly)</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0f14;
+        --panel: #121821;
+        --border: #243041;
+        --text: #e8eef7;
+        --muted: #9aa8bc;
+        --accent: #3d8bfd;
+        --ok: #3dd68c;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: radial-gradient(1200px 600px at 20% -10%, #1a2740 0%, var(--bg) 55%);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      main { max-width: 42rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+      h1 { font-size: 1.5rem; margin: 0 0 0.35rem; }
+      .sub { color: var(--muted); margin: 0 0 1.5rem; line-height: 1.45; }
+      nav {
+        display: flex; flex-wrap: wrap; gap: 0.5rem;
+        margin-bottom: 1.25rem;
+      }
+      a.nav {
+        display: inline-block;
+        padding: 0.55rem 0.9rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        text-decoration: none;
+        background: var(--panel);
+      }
+      a.nav:hover { border-color: var(--accent); }
+      a.nav.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+      pre {
+        margin: 0;
+        padding: 1rem;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: auto;
+        font-size: 0.85rem;
+        line-height: 1.45;
+      }
+      .checklist {
+        margin: 1.25rem 0 0;
+        padding: 1rem 1rem 1rem 1.75rem;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .checklist li { margin: 0.35rem 0; }
+      .checklist .ok { color: var(--ok); }
+      code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>intentLM hello world</h1>
+      <p class="sub">
+        Open-source <code>localOnly</code> capture — no API key, no network.
+        Click the links; the panel should show a <code>visitorId</code>, <code>sess_…</code> id,
+        and integer tokens (e.g. <code>[910, 101, 102]</code>).
+      </p>
+
+      <nav aria-label="Demo routes">
+        <a class="nav" href="/" data-path="/">Home (101)</a>
+        <a class="nav" href="/pricing" data-path="/pricing">Pricing (102)</a>
+        <a class="nav" href="/checkout" data-path="/checkout">Checkout (203)</a>
+      </nav>
+
+      <pre id="out">loading…</pre>
+
+      <ul class="checklist" id="checks">
+        <li data-check="visitor">Visitor UUID + <code>_ilm_vid</code> cookie</li>
+        <li data-check="session">Session id starts with <code>sess_</code></li>
+        <li data-check="tokens">Tokens include <code>910</code> (<code>SESSION_STARTED</code>)</li>
+        <li data-check="pricing">After Pricing click: token <code>102</code> (<code>PRICING_VIEW</code>)</li>
+        <li data-check="checkout">After Checkout click: token <code>203</code> (<code>CHECKOUT_STARTED</code>)</li>
+        <li data-check="scroll50">Scroll ~50%: token <code>911</code> (<code>SCROLL_DEPTH_50</code>)</li>
+        <li data-check="scroll75">Scroll ~75%: token <code>906</code> (<code>SCROLL_DEPTH_75</code>)</li>
+        <li data-check="scroll100">Scroll to bottom: token <code>912</code> (<code>SCROLL_DEPTH_100</code>)</li>
+      </ul>
+      <p class="sub" style="margin-top: 0.75rem; font-size: 0.85rem">
+        Scroll tokens (900s) fire from page scroll when <code>trackBehavior</code> is on — not from URL patterns.
+        Scroll down the spacer below to light those checks.
+      </p>
+      <div aria-hidden="true" style="height: 140vh; margin-top: 1.5rem; border-top: 1px dashed var(--border); padding-top: 1rem; color: var(--muted); font-size: 0.85rem">
+        Scroll spacer — keep going to hit 50% / 75% / 100% depth tokens…
+      </div>
+    </main>
+
+    <!--
+      Plain HTML cannot import bare "intentlm-sdk" (needs a bundler).
+      Load the IIFE from node_modules after: npm install
+    -->
+    <script src="./node_modules/intentlm-sdk/dist/intentlm.iife.js"></script>
+    <script>
+      const out = document.getElementById('out')
+      const intentLM = window.intentLM
+      if (!intentLM) {
+        out.textContent =
+          'intentLM failed to load.\nRun: npm install && npm start\nThen open the URL serve prints (usually http://localhost:3456).'
+        throw new Error('window.intentLM missing — run npm install in this folder')
+      }
+
+      function setActive() {
+        document.querySelectorAll('a.nav').forEach((a) => {
+          a.classList.toggle('active', a.getAttribute('data-path') === location.pathname)
+        })
+      }
+
+      function updateChecks(tokens) {
+        const visitorOk = Boolean(intentLM.getVisitorId()) && document.cookie.includes('_ilm_vid=')
+        const sessionOk = String(intentLM.getSessionId() || '').startsWith('sess_')
+        const tokensOk = tokens.includes(910)
+        const pricingOk = tokens.includes(102)
+        const checkoutOk = tokens.includes(203)
+        const map = {
+          visitor: visitorOk,
+          session: sessionOk,
+          tokens: tokensOk,
+          pricing: pricingOk,
+          checkout: checkoutOk,
+          scroll50: tokens.includes(911),
+          scroll75: tokens.includes(906),
+          scroll100: tokens.includes(912),
+        }
+        document.querySelectorAll('[data-check]').forEach((li) => {
+          const key = li.getAttribute('data-check')
+          const ok = Boolean(map[key])
+          li.classList.toggle('ok', ok)
+          if (!li.dataset.label) {
+            li.dataset.label = li.textContent.replace(/^[✓○]\s*/, '')
+          }
+          li.textContent = (ok ? '✓ ' : '○ ') + li.dataset.label
+        })
+      }
+
+      function render() {
+        const tokens = intentLM.getSessionTokens()
+        out.textContent = JSON.stringify(
+          {
+            path: location.pathname,
+            visitorId: intentLM.getVisitorId(),
+            sessionId: intentLM.getSessionId(),
+            tokens,
+            intent: null,
+            note: 'intent stays null in localOnly — use an API key for hosted classification',
+          },
+          null,
+          2,
+        )
+        setActive()
+        updateChecks(tokens)
+      }
+
+      intentLM.init({
+        localOnly: true,
+        debug: true,
+        patterns: {
+          '/': 101, // HOMEPAGE_VIEW
+          '/pricing*': 102, // PRICING_VIEW
+          '/checkout*': 203, // CHECKOUT_STARTED — use * not /** so /checkout itself matches
+        },
+        onAnalyze: (u) => {
+          console.log('[intentLM hello-world]', {
+            visitorId: u.visitorId,
+            sessionId: u.sessionId,
+            tokens: u.sessionTokens,
+            intent: u.intent,
+          })
+          render()
+        },
+      })
+
+      // Use pushState paths — hash routes (#/pricing) do not match URL patterns.
+      document.querySelectorAll('a[data-path]').forEach((a) => {
+        a.addEventListener('click', (e) => {
+          e.preventDefault()
+          history.pushState({}, '', a.getAttribute('data-path'))
+          render()
+        })
+      })
+
+      window.addEventListener('popstate', render)
+      render()
+    </script>
+  </body>
+</html>

@@ -6,6 +6,8 @@ Turn in-app navigation into a privacy-safe shared token vocabulary — then opti
 
 **npm:** [`intentlm-sdk`](https://www.npmjs.com/package/intentlm-sdk)
 
+**Try it (no API key):** [examples/hello-world](./examples/hello-world) — `npm install && npm start` → http://localhost:3456 — see `visitor_id` + integer tokens in under a minute.
+
 ---
 
 ## Why use this
@@ -48,9 +50,24 @@ Path **A** never calls the network. Path **B** needs a free key from [intentlm.a
 
 ## A. Open source — no API key
 
-Goal: after these steps you can read a stable **`visitor_id`**, a **`sess_…` session id**, and an **integer token sequence** as the user navigates — with **zero** requests to intentLM.
+### Hello world (fastest)
 
-### 1. Install
+```bash
+git clone https://github.com/intentlm/intentlm-sdk.git
+cd intentlm-sdk/examples/hello-world
+npm install
+npm start
+```
+
+Open **http://localhost:3456**, click **Pricing** / **Checkout**. You should see `visitorId`, `sess_…`, and tokens like `[910, 101, 102]` with **no** network calls to intentLM.
+
+Full walkthrough: [`examples/hello-world/README.md`](./examples/hello-world/README.md).
+
+---
+
+Goal of path A: a stable **`visitor_id`**, a **`sess_…` session id**, and an **integer token sequence** as the user navigates — with **zero** requests to intentLM.
+
+### 1. Install (in your own app)
 
 ```bash
 npm install intentlm-sdk
@@ -58,18 +75,19 @@ npm install intentlm-sdk
 
 ### 2. Init in the browser (no `apiKey`)
 
-Use **`localOnly: true`** (omit `apiKey`). Map your routes to **global** token IDs (do not invent new meanings for existing IDs):
+Use **`localOnly: true`** (omit `apiKey`). Map your routes to **global** token IDs (do not invent new meanings for existing IDs).
+
+**With a bundler** (Vite, Next, etc.):
 
 ```typescript
 import { intentLM } from 'intentlm-sdk'
-import { TOKEN_BY_LABEL } from 'intentlm-sdk/taxonomy'
 
 intentLM.init({
   localOnly: true, // required when you omit apiKey — no /v1/analyze or /v1/ingest
   patterns: {
     '/': 101, // HOMEPAGE_VIEW
     '/pricing*': 102, // PRICING_VIEW
-    '/checkout/**': 203,
+    '/checkout*': 203,
   },
   onAnalyze: (update) => {
     // Fires after navigation / capture (debounced). intent stays null in localOnly.
@@ -79,6 +97,8 @@ intentLM.init({
   },
 })
 ```
+
+**Plain HTML** (no bundler): load the IIFE — see [`examples/hello-world/index.html`](./examples/hello-world/index.html). Bare `import 'intentlm-sdk'` will fail in the browser without a bundler.
 
 Optional: import taxonomy-only helpers without `init`:
 
@@ -142,7 +162,7 @@ intentLM.init({
   patterns: {
     '/': 101,
     '/pricing*': 102,
-    '/checkout/**': 203,
+    '/checkout*': 203,
   },
   onAnalyze: (result) => {
     console.log(result.intent, result.confidence, result.trigger_nudge)

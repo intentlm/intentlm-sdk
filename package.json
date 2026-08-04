@@ -1,6 +1,6 @@
 {
   "name": "intentlm-sdk",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "intentLM\u2122 browser SDK \u2014 real-time behavioral intent classification",
   "author": {
     "name": "intentLM",
@@ -64,7 +64,8 @@
     "LICENSE",
     "LICENSE-TAXONOMY",
     "NOTICE",
-    "ATTRIBUTION.md"
+    "ATTRIBUTION.md",
+    "examples"
   ],
   "scripts": {
     "build": "node build.mjs && tsc --emitDeclarationOnly",
