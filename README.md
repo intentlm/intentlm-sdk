@@ -8,6 +8,8 @@ Turn in-app navigation into a privacy-safe shared token vocabulary — then opti
 
 **Try it (no API key):** [examples/hello-world](./examples/hello-world) — `npm install && npm start` → http://localhost:3456 — see `visitor_id` + integer tokens in under a minute.
 
+**Propose a taxonomy token (no Git required):** [GitHub issue form](https://github.com/intentlm/intentlm-sdk/issues/new?template=taxonomy_token.yml) · [intentlm.ai/contribute](https://intentlm.ai/contribute) · see [CONTRIBUTING.md](./CONTRIBUTING.md)
+
 ---
 
 ## Why use this

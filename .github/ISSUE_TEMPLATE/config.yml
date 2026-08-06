@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Product, billing, or Setup help
+    url: https://intentlm.ai/docs
+    about: Hosted product questions — use intentlm.ai docs or contact, not taxonomy issues.
+  - name: Propose a global taxonomy token (guided form)
+    url: https://github.com/intentlm/intentlm-sdk/issues/new?template=taxonomy_token.yml
+    about: Suggest a new shared token ID/label. No Git expertise required — fill the form.
+  - name: Brand & taxonomy credit
+    url: https://intentlm.ai/brand
+    about: Trademark and CC BY-SA attribution for the Global Intent Taxonomy.

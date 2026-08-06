@@ -1,0 +1,81 @@
+name: Propose a taxonomy token
+description: Suggest a new global intent token (no coding required — maintainers open the PR).
+title: "[taxonomy] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **You do not need to use Git or edit code.** Describe the behavior in plain language.
+        We review proposals and, if approved, add the token to the open taxonomy and ship it in the SDK.
+
+        Prefer an **existing** token when one already fits — shared IDs keep models useful for everyone.
+        Browse labels: [`src/taxonomy.ts`](https://github.com/intentlm/intentlm-sdk/blob/main/src/taxonomy.ts)
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What is the user doing?
+      description: Plain language. Example — "Shopper opens the size guide on a product page before adding to cart."
+      placeholder: Describe the behavior or screen…
+    validations:
+      required: true
+
+  - type: input
+    id: example_url
+    attributes:
+      label: Example path or screen (optional)
+      description: No secrets, PII, or customer-identifying hosts. Example — `/products/:id/size-guide`
+      placeholder: /path/or/screen-name
+
+  - type: input
+    id: closest_token
+    attributes:
+      label: Closest existing token (if any)
+      description: e.g. PRICING_VIEW, PRODUCT_DETAIL_VIEW, or "none"
+      placeholder: none
+
+  - type: dropdown
+    id: event_surface
+    attributes:
+      label: Where does this happen?
+      options:
+        - Browser (page view / in-app UI)
+        - Server (auth, payment, admin — must not be URL-mapped from the browser)
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: vertical
+    attributes:
+      label: Product vertical
+      options:
+        - B2B SaaS
+        - E-commerce / DTC
+        - Marketplace
+        - Developer tools
+        - Other / cross-vertical
+    validations:
+      required: true
+
+  - type: textarea
+    id: why_new
+    attributes:
+      label: Why isn't an existing token enough?
+      description: Required if a close match exists. We reject duplicates unless you explain the gap.
+      placeholder: Existing DOCS_VIEW is too broad because…
+
+  - type: input
+    id: proposed_label
+    attributes:
+      label: Suggested label (optional)
+      description: SCREAMING_SNAKE_CASE if you have one. Maintainers assign the numeric ID.
+      placeholder: SIZE_GUIDE_VIEW
+
+  - type: checkboxes
+    id: license_ok
+    attributes:
+      label: License
+      options:
+        - label: I understand approved tokens are published under CC BY-SA 4.0 in the Global Intent Taxonomy and IDs must never be reassigned.
+          required: true
