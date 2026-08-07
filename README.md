@@ -6,7 +6,7 @@ Turn in-app navigation into a privacy-safe shared token vocabulary — then opti
 
 **npm:** [`intentlm-sdk`](https://www.npmjs.com/package/intentlm-sdk)
 
-**Try it (no API key):** [examples/hello-world](./examples/hello-world) — `npm install && npm start` → http://localhost:3456 — see `visitor_id` + integer tokens in under a minute.
+**Try it (no API key):** [examples/hello-world](./examples/hello-world) — from repo root `npm install && npm run build`, then `cd examples/hello-world && npm install && npm start` → http://localhost:3456 (`#capture` checklist, `#backend` pull + POST to your terminal).
 
 **Propose a taxonomy token (no Git required):** [GitHub issue form](https://github.com/intentlm/intentlm-sdk/issues/new?template=taxonomy_token.yml) · [intentlm.ai/contribute](https://intentlm.ai/contribute) · see [CONTRIBUTING.md](./CONTRIBUTING.md)
 
@@ -56,12 +56,14 @@ Path **A** never calls the network. Path **B** needs a free key from [intentlm.a
 
 ```bash
 git clone https://github.com/intentlm/intentlm-sdk.git
-cd intentlm-sdk/examples/hello-world
+cd intentlm-sdk
+npm install && npm run build
+cd examples/hello-world
 npm install
 npm start
 ```
 
-Open **http://localhost:3456**, click **Pricing** / **Checkout**. You should see `visitorId`, `sess_…`, and tokens like `[910, 101, 102]` with **no** network calls to intentLM.
+Open **http://localhost:3456**, click **Pricing** / **Checkout**. You should see `getSessionSnapshot()` fields (`visitorId`, `sessionId`, `tokens`, `timeDeltasMs`, `events`) with **no** network calls to intentLM.
 
 Full walkthrough: [`examples/hello-world/README.md`](./examples/hello-world/README.md).
 
@@ -92,12 +94,21 @@ intentLM.init({
     '/checkout*': 203,
   },
   onAnalyze: (update) => {
-    // Fires after navigation / capture (debounced). intent stays null in localOnly.
+    // Push: fires after navigation / capture (debounced). intent stays null in localOnly.
     console.log('visitor_id', update.visitorId)
     console.log('session_id', update.sessionId)
     console.log('tokens', update.sessionTokens) // e.g. [910, 101, 102]
   },
 })
+
+// Pull anytime (preferred when you own the stream / localOnly):
+const snap = intentLM.getSessionSnapshot()
+// {
+//   visitorId, sessionId,
+//   tokens: [910, 101, 102],
+//   timeDeltasMs: [0, 12, 840],
+//   events: [{ token, label, timeDeltaMs }, …],
+// }
 ```
 
 **Plain HTML** (no bundler): load the IIFE — see [`examples/hello-world/index.html`](./examples/hello-world/index.html). Bare `import 'intentlm-sdk'` will fail in the browser without a bundler.
@@ -122,9 +133,12 @@ intentLM.capture('PRICING_VIEW') // same as token 102
 In DevTools console (same origin as the page):
 
 ```typescript
+intentLM.getSessionSnapshot()
+// or individually:
 intentLM.getVisitorId() // UUID — also cookie `_ilm_vid`
 intentLM.getSessionId() // starts with `sess_`
 intentLM.getSessionTokens() // integers, e.g. [910, 101, 102]
+intentLM.getTimeDeltasMs() // parallel ms gaps, e.g. [0, 14, 820]
 ```
 
 | Check | Passes when |
@@ -132,10 +146,11 @@ intentLM.getSessionTokens() // integers, e.g. [910, 101, 102]
 | Visitor | `getVisitorId()` returns a UUID **and** `document.cookie` contains `_ilm_vid=…` |
 | Session | `getSessionId()` is non-null and starts with `sess_` |
 | Tokens | `getSessionTokens()` includes `910` (`SESSION_STARTED`) plus route tokens you mapped (e.g. `102` after `/pricing`) |
+| Deltas | `getTimeDeltasMs().length === getSessionTokens().length` (first entry is `0`) |
 | Network | DevTools → Network: **no** calls to intentLM `/v1/analyze` or `/v1/ingest` |
 | Callback | `onAnalyze` receives `sessionTokens` + `visitorId`; `intent` is `null` |
 
-That is a successful OSS install. You own the stream — send it to your own backend/model if you want.
+That is a successful OSS install. You own the stream — send `getSessionSnapshot()` to your own backend/model if you want.
 
 **Not included without a key:** hosted intent labels (`UPGRADE_SEEKING`, etc.), Insights, webhooks. For those, continue with path B.
 

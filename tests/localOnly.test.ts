@@ -68,5 +68,15 @@ describe('localOnly capture (OSS, no API key)', () => {
     expect(last.sessionTokens).toContain(910);
     expect(last.sessionTokens).toContain(102);
     expect(last.intent).toBeNull(); // no hosted classify in localOnly
+
+    const snap = sdk.getSessionSnapshot();
+    expect(snap.visitorId).toBe(visitorId);
+    expect(snap.sessionId).toMatch(/^sess_/);
+    expect(snap.tokens).toEqual(sdk.getSessionTokens());
+    expect(snap.timeDeltasMs).toEqual(sdk.getTimeDeltasMs());
+    expect(snap.timeDeltasMs).toHaveLength(snap.tokens.length);
+    expect(snap.timeDeltasMs[0]).toBe(0);
+    expect(snap.events[0]).toMatchObject({ token: 910, label: 'SESSION_STARTED', timeDeltaMs: 0 });
+    expect(snap.events.some((e) => e.token === 102 && e.label === 'PRICING_VIEW')).toBe(true);
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "intentlm-sdk",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "intentLM\u2122 browser SDK \u2014 real-time behavioral intent classification",
   "author": {
     "name": "intentLM",

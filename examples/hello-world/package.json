@@ -1,12 +1,13 @@
 {
   "name": "intentlm-sdk-hello-world",
   "private": true,
-  "description": "Minimal localOnly demo for intentlm-sdk — visitor_id + token stream, no API key",
+  "description": "localOnly demo — capture checklist + pull snapshot / POST to your backend",
+  "type": "module",
   "scripts": {
-    "start": "npx --yes serve . -l 3456",
+    "start": "node server.mjs",
     "test:smoke": "node -e \"require('fs').accessSync('node_modules/intentlm-sdk/dist/intentlm.iife.js'); console.log('ok: intentlm-sdk IIFE present')\""
   },
   "dependencies": {
-    "intentlm-sdk": "^0.1.14"
+    "intentlm-sdk": "file:../.."
   }
 }

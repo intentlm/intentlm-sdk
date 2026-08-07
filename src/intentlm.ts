@@ -222,6 +222,29 @@ export interface IntentAnalyzeUpdate {
   phrases_detected?: string[] | null;
 }
 
+/** One recorded token in the current session (for local inspection / your own backend). */
+export interface IntentLMSessionEvent {
+  token: number;
+  /** Resolved taxonomy or local label */
+  label: string;
+  /** Milliseconds since the previous token in this session; `0` for the first. */
+  timeDeltaMs: number;
+}
+
+/**
+ * Pull API for the in-browser capture buffer.
+ * Use with `localOnly` or anytime you need visitor / session / token stream without waiting on analyze.
+ */
+export interface IntentLMSessionSnapshot {
+  visitorId?: string;
+  sessionId: string | null;
+  tokens: number[];
+  /** Parallel to `tokens` — inter-event gaps in ms (same length). */
+  timeDeltasMs: number[];
+  /** Convenience zip of token + label + delta. */
+  events: IntentLMSessionEvent[];
+}
+
 /** Options for {@link IntentLMSDK.reset} */
 export interface IntentLMResetOptions {
   /** Flush current session to /v1/ingest before clearing (default true). */
@@ -561,6 +584,42 @@ class IntentLMSDK {
   /** Copy of the in-memory integer token sequence for this session. */
   getSessionTokens(): number[] {
     return [...this._sequence];
+  }
+
+  /**
+   * Inter-event time gaps (ms), parallel to {@link getSessionTokens}.
+   * Index 0 is always `0` (first token has no prior event).
+   */
+  getTimeDeltasMs(): number[] {
+    return [...this._timeDeltas];
+  }
+
+  /**
+   * Snapshot of visitor id, session id, token stream, and time deltas.
+   * Preferred pull API for OSS / `localOnly` apps that own the stream.
+   *
+   * @example
+   * const snap = intentLM.getSessionSnapshot()
+   * // { visitorId, sessionId, tokens: [910, 101, 102], timeDeltasMs: [0, 12, 840], events: [...] }
+   */
+  getSessionSnapshot(): IntentLMSessionSnapshot {
+    const tokens = [...this._sequence];
+    const timeDeltasMs = [...this._timeDeltas];
+    const events: IntentLMSessionEvent[] = tokens.map((token, i) => ({
+      token,
+      label: this.tokenLabel(token),
+      timeDeltaMs: timeDeltasMs[i] ?? 0,
+    }));
+    const snap: IntentLMSessionSnapshot = {
+      sessionId: this._sessionId,
+      tokens,
+      timeDeltasMs,
+      events,
+    };
+    if (this._visitorId !== undefined) {
+      snap.visitorId = this._visitorId;
+    }
+    return snap;
   }
 
   /**

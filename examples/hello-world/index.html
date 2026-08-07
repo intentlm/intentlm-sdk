@@ -23,14 +23,16 @@
         color: var(--text);
         min-height: 100vh;
       }
-      main { max-width: 42rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+      main { max-width: 48rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
       h1 { font-size: 1.5rem; margin: 0 0 0.35rem; }
-      .sub { color: var(--muted); margin: 0 0 1.5rem; line-height: 1.45; }
-      nav {
+      h2 { font-size: 0.95rem; color: var(--muted); font-weight: 600; margin: 1.25rem 0 0.5rem; }
+      .sub { color: var(--muted); margin: 0 0 1.25rem; line-height: 1.45; }
+      .tabs, .row, nav.routes {
         display: flex; flex-wrap: wrap; gap: 0.5rem;
-        margin-bottom: 1.25rem;
+        margin-bottom: 1rem;
       }
-      a.nav {
+      .tabs { margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+      button, a.nav, a.tab {
         display: inline-block;
         padding: 0.55rem 0.9rem;
         border: 1px solid var(--border);
@@ -38,9 +40,19 @@
         color: var(--text);
         text-decoration: none;
         background: var(--panel);
+        font: inherit;
+        cursor: pointer;
       }
-      a.nav:hover { border-color: var(--accent); }
-      a.nav.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        font-weight: 600;
+      }
+      button:hover, a.nav:hover, a.tab:hover { border-color: var(--accent); }
+      a.nav.active, a.tab.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+      .page { display: none; }
+      .page.active { display: block; }
       pre {
         margin: 0;
         padding: 1rem;
@@ -48,8 +60,9 @@
         border: 1px solid var(--border);
         border-radius: 10px;
         overflow: auto;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         line-height: 1.45;
+        max-height: 28rem;
       }
       .checklist {
         margin: 1.25rem 0 0;
@@ -69,70 +82,137 @@
     <main>
       <h1>intentLM hello world</h1>
       <p class="sub">
-        Open-source <code>localOnly</code> capture — no API key, no network.
-        Click the links; the panel should show a <code>visitorId</code>, <code>sess_…</code> id,
-        and integer tokens (e.g. <code>[910, 101, 102]</code>).
+        Open-source <code>localOnly</code> capture — no API key, nothing sent to intentLM
+        unless <em>you</em> POST the snapshot to your own backend.
       </p>
 
-      <nav aria-label="Demo routes">
+      <div class="tabs" role="tablist" aria-label="Demo pages">
+        <a class="tab active" href="#capture" data-page="capture">1. Capture checklist</a>
+        <a class="tab" href="#backend" data-page="backend">2. Own the stream</a>
+      </div>
+
+      <nav class="routes" aria-label="Demo routes">
         <a class="nav" href="/" data-path="/">Home (101)</a>
         <a class="nav" href="/pricing" data-path="/pricing">Pricing (102)</a>
         <a class="nav" href="/checkout" data-path="/checkout">Checkout (203)</a>
+        <button type="button" id="btn-capture">capture('UPGRADE_CTA_CLICK')</button>
       </nav>
 
-      <pre id="out">loading…</pre>
+      <!-- Page 1: verify capture works -->
+      <section id="page-capture" class="page active" data-page-panel="capture">
+        <p class="sub" style="margin-top: 0">
+          Confirm visitor id, session, tokens, and scroll signals. JSON below updates via
+          <code>getSessionSnapshot()</code> / <code>onAnalyze</code>.
+        </p>
+        <pre id="out">loading…</pre>
+        <ul class="checklist" id="checks">
+          <li data-check="visitor">Visitor UUID + <code>_ilm_vid</code> cookie</li>
+          <li data-check="session">Session id starts with <code>sess_</code></li>
+          <li data-check="tokens">Tokens include <code>910</code> (<code>SESSION_STARTED</code>)</li>
+          <li data-check="deltas">Time deltas array matches token length</li>
+          <li data-check="pricing">After Pricing click: token <code>102</code> (<code>PRICING_VIEW</code>)</li>
+          <li data-check="checkout">After Checkout click: token <code>203</code> (<code>CHECKOUT_STARTED</code>)</li>
+          <li data-check="scroll50">Scroll ~50%: token <code>911</code> (<code>SCROLL_DEPTH_50</code>)</li>
+          <li data-check="scroll75">Scroll ~75%: token <code>906</code> (<code>SCROLL_DEPTH_75</code>)</li>
+          <li data-check="scroll100">Scroll to bottom: token <code>912</code> (<code>SCROLL_DEPTH_100</code>)</li>
+        </ul>
+        <p class="sub" style="margin-top: 0.75rem; font-size: 0.85rem">
+          Scroll tokens (900s) fire from page scroll when <code>trackBehavior</code> is on — not from URL patterns.
+        </p>
+        <div aria-hidden="true" style="height: 140vh; margin-top: 1.5rem; border-top: 1px dashed var(--border); padding-top: 1rem; color: var(--muted); font-size: 0.85rem">
+          Scroll spacer — keep going to hit 50% / 75% / 100% depth tokens…
+        </div>
+      </section>
 
-      <ul class="checklist" id="checks">
-        <li data-check="visitor">Visitor UUID + <code>_ilm_vid</code> cookie</li>
-        <li data-check="session">Session id starts with <code>sess_</code></li>
-        <li data-check="tokens">Tokens include <code>910</code> (<code>SESSION_STARTED</code>)</li>
-        <li data-check="pricing">After Pricing click: token <code>102</code> (<code>PRICING_VIEW</code>)</li>
-        <li data-check="checkout">After Checkout click: token <code>203</code> (<code>CHECKOUT_STARTED</code>)</li>
-        <li data-check="scroll50">Scroll ~50%: token <code>911</code> (<code>SCROLL_DEPTH_50</code>)</li>
-        <li data-check="scroll75">Scroll ~75%: token <code>906</code> (<code>SCROLL_DEPTH_75</code>)</li>
-        <li data-check="scroll100">Scroll to bottom: token <code>912</code> (<code>SCROLL_DEPTH_100</code>)</li>
-      </ul>
-      <p class="sub" style="margin-top: 0.75rem; font-size: 0.85rem">
-        Scroll tokens (900s) fire from page scroll when <code>trackBehavior</code> is on — not from URL patterns.
-        Scroll down the spacer below to light those checks.
-      </p>
-      <div aria-hidden="true" style="height: 140vh; margin-top: 1.5rem; border-top: 1px dashed var(--border); padding-top: 1rem; color: var(--muted); font-size: 0.85rem">
-        Scroll spacer — keep going to hit 50% / 75% / 100% depth tokens…
-      </div>
+      <!-- Page 2: pull API + send to your backend -->
+      <section id="page-backend" class="page" data-page-panel="backend">
+        <p class="sub" style="margin-top: 0">
+          Pull the buffer, then <strong>Send snap to my backend</strong> —
+          <code>POST /ingest</code> logs in the terminal where <code>npm start</code> is running.
+        </p>
+        <div class="row">
+          <button type="button" class="primary" id="btn-pull">Pull getSessionSnapshot()</button>
+          <button type="button" id="btn-getters">Pull individual getters</button>
+          <button type="button" id="btn-send">Send snap to my backend</button>
+          <button type="button" id="btn-reset">reset()</button>
+        </div>
+        <p class="sub" id="send-status" style="margin-top: -0.25rem; font-size: 0.85rem"></p>
+
+        <h2>getSessionSnapshot()</h2>
+        <pre id="snap-out">Click “Pull getSessionSnapshot()”…</pre>
+
+        <h2>Individual getters</h2>
+        <pre id="getters-out">Click “Pull individual getters”…</pre>
+
+        <h2>Browser → your backend</h2>
+        <pre>const snap = intentLM.getSessionSnapshot()
+
+await fetch('/ingest', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(snap),
+})</pre>
+      </section>
     </main>
 
-    <!--
-      Plain HTML cannot import bare "intentlm-sdk" (needs a bundler).
-      Load the IIFE from node_modules after: npm install
-    -->
     <script src="./node_modules/intentlm-sdk/dist/intentlm.iife.js"></script>
     <script>
       const out = document.getElementById('out')
+      const snapEl = document.getElementById('snap-out')
+      const gettersEl = document.getElementById('getters-out')
+      const sendStatus = document.getElementById('send-status')
       const intentLM = window.intentLM
+
       if (!intentLM) {
         out.textContent =
-          'intentLM failed to load.\nRun: npm install && npm start\nThen open the URL serve prints (usually http://localhost:3456).'
-        throw new Error('window.intentLM missing — run npm install in this folder')
+          'intentLM failed to load.\nFrom repo root: npm install && npm run build\nThen: cd examples/hello-world && npm install && npm start'
+        throw new Error('window.intentLM missing')
       }
 
-      function setActive() {
-        document.querySelectorAll('a.nav').forEach((a) => {
+      function showPage(name) {
+        document.querySelectorAll('[data-page-panel]').forEach((el) => {
+          el.classList.toggle('active', el.getAttribute('data-page-panel') === name)
+        })
+        document.querySelectorAll('a.tab').forEach((a) => {
+          a.classList.toggle('active', a.getAttribute('data-page') === name)
+        })
+        if (name === 'backend') {
+          pullSnapshot()
+          pullGetters()
+        }
+      }
+
+      function setRouteActive() {
+        document.querySelectorAll('a.nav[data-path]').forEach((a) => {
           a.classList.toggle('active', a.getAttribute('data-path') === location.pathname)
         })
       }
 
-      function updateChecks(tokens) {
-        const visitorOk = Boolean(intentLM.getVisitorId()) && document.cookie.includes('_ilm_vid=')
-        const sessionOk = String(intentLM.getSessionId() || '').startsWith('sess_')
-        const tokensOk = tokens.includes(910)
-        const pricingOk = tokens.includes(102)
-        const checkoutOk = tokens.includes(203)
+      function getSnap() {
+        if (typeof intentLM.getSessionSnapshot === 'function') {
+          return intentLM.getSessionSnapshot()
+        }
+        return {
+          visitorId: intentLM.getVisitorId(),
+          sessionId: intentLM.getSessionId(),
+          tokens: intentLM.getSessionTokens(),
+          timeDeltasMs: typeof intentLM.getTimeDeltasMs === 'function' ? intentLM.getTimeDeltasMs() : [],
+          events: [],
+        }
+      }
+
+      function updateChecks(snap) {
+        const tokens = snap.tokens || []
         const map = {
-          visitor: visitorOk,
-          session: sessionOk,
-          tokens: tokensOk,
-          pricing: pricingOk,
-          checkout: checkoutOk,
+          visitor: Boolean(snap.visitorId) && document.cookie.includes('_ilm_vid='),
+          session: String(snap.sessionId || '').startsWith('sess_'),
+          tokens: tokens.includes(910),
+          deltas:
+            Array.isArray(snap.timeDeltasMs) &&
+            snap.timeDeltasMs.length === tokens.length &&
+            snap.timeDeltasMs[0] === 0,
+          pricing: tokens.includes(102),
+          checkout: tokens.includes(203),
           scroll50: tokens.includes(911),
           scroll75: tokens.includes(906),
           scroll100: tokens.includes(912),
@@ -148,54 +228,146 @@
         })
       }
 
-      function render() {
-        const tokens = intentLM.getSessionTokens()
+      function renderCapture() {
+        const snap = getSnap()
         out.textContent = JSON.stringify(
           {
             path: location.pathname,
-            visitorId: intentLM.getVisitorId(),
-            sessionId: intentLM.getSessionId(),
-            tokens,
+            ...snap,
             intent: null,
             note: 'intent stays null in localOnly — use an API key for hosted classification',
           },
           null,
           2,
         )
-        setActive()
-        updateChecks(tokens)
+        setRouteActive()
+        updateChecks(snap)
+        return snap
+      }
+
+      function pullSnapshot() {
+        try {
+          const snap = getSnap()
+          snapEl.textContent = JSON.stringify(snap, null, 2)
+          setRouteActive()
+          return snap
+        } catch (err) {
+          snapEl.textContent = 'Error: ' + err
+          throw err
+        }
+      }
+
+      function pullGetters() {
+        try {
+          // Call each getter directly (same buffer getSessionSnapshot reads)
+          const payload = {
+            'intentLM.getVisitorId()': intentLM.getVisitorId(),
+            'intentLM.getSessionId()': intentLM.getSessionId(),
+            'intentLM.getSessionTokens()': intentLM.getSessionTokens(),
+            'intentLM.getTimeDeltasMs()':
+              typeof intentLM.getTimeDeltasMs === 'function'
+                ? intentLM.getTimeDeltasMs()
+                : '(missing — rebuild SDK ≥ 0.1.15)',
+          }
+          gettersEl.textContent = JSON.stringify(payload, null, 2)
+          gettersEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+          setRouteActive()
+          return payload
+        } catch (err) {
+          gettersEl.textContent = 'Error calling getters: ' + err
+          console.error('[hello-world] pullGetters', err)
+        }
+      }
+
+      async function sendToBackend() {
+        const snap = pullSnapshot()
+        pullGetters()
+        sendStatus.textContent = 'Sending POST /ingest…'
+        try {
+          const res = await fetch('/ingest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(snap),
+          })
+          const data = await res.json().catch(() => ({}))
+          if (!res.ok) throw new Error(data.error || res.statusText)
+          sendStatus.textContent =
+            'Sent — check the terminal running npm start (POST /ingest log).'
+        } catch (err) {
+          sendStatus.textContent =
+            'Send failed: ' + err + ' — use npm start (server.mjs), not a static-only server.'
+        }
+      }
+
+      function afterNav() {
+        renderCapture()
+        if (document.getElementById('page-backend').classList.contains('active')) {
+          pullSnapshot()
+          pullGetters()
+        }
       }
 
       intentLM.init({
         localOnly: true,
         debug: true,
         patterns: {
-          '/': 101, // HOMEPAGE_VIEW
-          '/pricing*': 102, // PRICING_VIEW
-          '/checkout*': 203, // CHECKOUT_STARTED — use * not /** so /checkout itself matches
+          '/': 101,
+          '/pricing*': 102,
+          '/checkout*': 203,
         },
-        onAnalyze: (u) => {
-          console.log('[intentLM hello-world]', {
-            visitorId: u.visitorId,
-            sessionId: u.sessionId,
-            tokens: u.sessionTokens,
-            intent: u.intent,
-          })
-          render()
-        },
+        onAnalyze: () => afterNav(),
       })
 
-      // Use pushState paths — hash routes (#/pricing) do not match URL patterns.
-      document.querySelectorAll('a[data-path]').forEach((a) => {
+      document.querySelectorAll('a.tab').forEach((a) => {
         a.addEventListener('click', (e) => {
           e.preventDefault()
-          history.pushState({}, '', a.getAttribute('data-path'))
-          render()
+          const name = a.getAttribute('data-page')
+          history.replaceState({}, '', location.pathname + '#' + name)
+          showPage(name)
         })
       })
 
-      window.addEventListener('popstate', render)
-      render()
+      document.querySelectorAll('a[data-path]').forEach((a) => {
+        a.addEventListener('click', (e) => {
+          e.preventDefault()
+          const hash = location.hash || '#capture'
+          history.pushState({}, '', a.getAttribute('data-path') + hash)
+          afterNav()
+        })
+      })
+
+      document.getElementById('btn-capture').addEventListener('click', () => {
+        intentLM.capture('UPGRADE_CTA_CLICK')
+        afterNav()
+      })
+      document.getElementById('btn-pull').addEventListener('click', (e) => {
+        e.preventDefault()
+        pullSnapshot()
+        pullGetters()
+      })
+      document.getElementById('btn-getters').addEventListener('click', (e) => {
+        e.preventDefault()
+        pullGetters()
+      })
+      document.getElementById('btn-send').addEventListener('click', (e) => {
+        e.preventDefault()
+        sendToBackend()
+      })
+      document.getElementById('btn-reset').addEventListener('click', (e) => {
+        e.preventDefault()
+        intentLM.reset({ flushBeforeReset: false })
+        afterNav()
+      })
+
+      window.addEventListener('popstate', () => {
+        const page = (location.hash || '#capture').slice(1)
+        showPage(page === 'backend' ? 'backend' : 'capture')
+        afterNav()
+      })
+
+      const initialPage = (location.hash || '#capture').slice(1)
+      showPage(initialPage === 'backend' ? 'backend' : 'capture')
+      renderCapture()
     </script>
   </body>
 </html>
